@@ -22,7 +22,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-public class ClienteChat extends JFrame implements ActionListener
+
+public class ClienteSimetrico extends JFrame implements ActionListener
 {
 	private static final long serialVersionUID = 1L;
 	Socket socket;
@@ -35,7 +36,7 @@ public class ClienteChat extends JFrame implements ActionListener
 	JButton boton = new JButton("Enviar");
 	JButton desconectar = new JButton("Salir");
 	boolean repetir = true;
-	public ClienteChat(Socket socket, String nombre)
+	public ClienteSimetrico(Socket socket, String nombre)
 	{
 		// Prepara la pantalla. Se recibe el socket creado y el nombre del cliente
 		super(" Conexión del cliente chat: " + nombre);
@@ -98,7 +99,7 @@ public class ClienteChat extends JFrame implements ActionListener
 		}
 		if(!nombre.trim().equals(""))
 		{
-			ClienteChat cliente = new ClienteChat(socket, nombre);
+			ClienteSimetrico cliente = new ClienteSimetrico(socket, nombre);
 			cliente.setBounds(0,0,540,400);
 			cliente.setVisible(true);
 			cliente.ejecutar();

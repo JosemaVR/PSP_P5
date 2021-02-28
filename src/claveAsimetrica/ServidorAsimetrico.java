@@ -13,7 +13,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-public class ServidorChat extends JFrame implements ActionListener
+public class ServidorAsimetrico extends JFrame implements ActionListener
 {
 	private static final long serialVersionUID = 1L;
 	static ServerSocket servidor;
@@ -27,7 +27,7 @@ public class ServidorChat extends JFrame implements ActionListener
 	static JTextArea textarea;
 	JButton salir = new JButton("Salir");
 	static Socket[] tabla = new Socket[MAXIMO];
-	public ServidorChat()
+	public ServidorAsimetrico()
 	{
 		// Construimos el entorno gráfico
 		super(" VENTANA DEL SERVIDOR DE CHAT ");
@@ -58,7 +58,7 @@ public class ServidorChat extends JFrame implements ActionListener
 		// y las variables y se prepara la pantalla
 		servidor = new ServerSocket(PUERTO);
 		System.out.println("Servidor iniciado...");
-		ServidorChat pantalla = new ServidorChat();
+		ServidorAsimetrico pantalla = new ServidorAsimetrico();
 		pantalla.setBounds(0, 0, 540, 450);
 		pantalla.setVisible(true);
 		mensaje.setText("Número de conexiones actuales: " + 0);
@@ -84,7 +84,7 @@ public class ServidorChat extends JFrame implements ActionListener
 			tabla[CONEXIONES] = socket;
 			CONEXIONES++;
 			ACTUALES++;
-			HiloServidor hilo = new HiloServidor(socket);
+			HiloServidorAsimetrico hilo = new HiloServidorAsimetrico(socket);
 			hilo.start();
 		}
 		// Si se alcanzan 15 conexiones o se pulsa el botón Salir,

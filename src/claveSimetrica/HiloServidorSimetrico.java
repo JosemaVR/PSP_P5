@@ -14,12 +14,12 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-public class HiloServidor extends Thread
+public class HiloServidorSimetrico extends Thread
 {
 	DataInputStream fentrada;
 	Socket socket;
 	boolean fin = false;
-	public HiloServidor(Socket socket)
+	public HiloServidorSimetrico(Socket socket)
 	{
 		this.socket = socket;
 		try

@@ -4,12 +4,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-public class HiloServidor extends Thread
+public class HiloServidorAsimetrico extends Thread
 {
 	DataInputStream fentrada;
 	Socket socket;
 	boolean fin = false;
-	public HiloServidor(Socket socket)
+	public HiloServidorAsimetrico(Socket socket)
 	{
 		this.socket = socket;
 		try
