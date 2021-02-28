@@ -85,7 +85,6 @@ public class ClienteAsimetrico extends JFrame implements ActionListener
 		catch (IOException ex)
 		{
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" + ex.getMessage(), "<<Mensaje de Error:1>>", JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
 		}
 		if(!nombre.trim().equals(""))

@@ -37,9 +37,9 @@ public class HiloServidorSimetrico extends Thread
 	// acaba de incorporar
 	public void run()
 	{
-		ServidorChat.mensaje.setText("Número de conexiones actuales: " +
-				ServidorChat.ACTUALES);
-		String texto = ServidorChat.textarea.getText();
+		ServidorSimetrico.mensaje.setText("Número de conexiones actuales: " +
+				ServidorSimetrico.ACTUALES);
+		String texto = ServidorSimetrico.textarea.getText();
 		EnviarMensajes(texto);
 		// Seguidamente, se crea un bucle en el que se recibe lo que el cliente escribe en el chat.
 		// Cuando un cliente finaliza con el botón Salir, se envía un * al servidor del Chat,
@@ -54,17 +54,17 @@ public class HiloServidorSimetrico extends Thread
 				String cadena = desencriptar(data);
 				if(cadena.trim().equals("*"))
 				{
-					ServidorChat.ACTUALES--;
-					ServidorChat.mensaje.setText("Número de conexiones actuales: "
-							+ ServidorChat.ACTUALES);
+					ServidorSimetrico.ACTUALES--;
+					ServidorSimetrico.mensaje.setText("Número de conexiones actuales: "
+							+ ServidorSimetrico.ACTUALES);
 					fin=true;
 				}
 				// El texto que el cliente escribe en el chat,
 				// se añade al textarea del servidor y se reenvía a todos los clientes
 				else
 				{
-					ServidorChat.textarea.append(cadena + "\n");
-					texto = ServidorChat.textarea.getText();
+					ServidorSimetrico.textarea.append(cadena + "\n");
+					texto = ServidorSimetrico.textarea.getText();
 					EnviarMensajes(texto);
 				}
 			}
@@ -81,9 +81,9 @@ public class HiloServidorSimetrico extends Thread
 	// El programa abre un stream de salida para escribir el texto en el socket
 	private void EnviarMensajes(String texto)
 	{
-		for(int i=0; i<ServidorChat.CONEXIONES; i++)
+		for(int i=0; i<ServidorSimetrico.CONEXIONES; i++)
 		{
-			Socket socket = ServidorChat.tabla[i];
+			Socket socket = ServidorSimetrico.tabla[i];
 			try
 			{
 				DataOutputStream fsalida = new

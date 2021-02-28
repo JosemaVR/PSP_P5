@@ -27,9 +27,9 @@ public class HiloServidorAsimetrico extends Thread
 	// acaba de incorporar
 	public void run()
 	{
-		ServidorChat.mensaje.setText("Número de conexiones actuales: " +
-				ServidorChat.ACTUALES);
-		String texto = ServidorChat.textarea.getText();
+		ServidorAsimetrico.mensaje.setText("Número de conexiones actuales: " +
+				ServidorAsimetrico.ACTUALES);
+		String texto = ServidorAsimetrico.textarea.getText();
 		EnviarMensajes(texto);
 		// Seguidamente, se crea un bucle en el que se recibe lo que el cliente escribe en el chat.
 		// Cuando un cliente finaliza con el botón Salir, se envía un * al servidor del Chat,
@@ -44,17 +44,17 @@ public class HiloServidorAsimetrico extends Thread
 				cadena = desencriptar(encriptado);
 				if(cadena.trim().equals("*"))
 				{
-					ServidorChat.ACTUALES--;
-					ServidorChat.mensaje.setText("Número de conexiones actuales: "
-							+ ServidorChat.ACTUALES);
+					ServidorAsimetrico.ACTUALES--;
+					ServidorAsimetrico.mensaje.setText("Número de conexiones actuales: "
+							+ ServidorAsimetrico.ACTUALES);
 					fin=true;
 				}
 				// El texto que el cliente escribe en el chat,
 				// se añade al textarea del servidor y se reenvía a todos los clientes
 				else
 				{
-					ServidorChat.textarea.append(cadena + "\n");
-					texto = ServidorChat.textarea.getText();
+					ServidorAsimetrico.textarea.append(cadena + "\n");
+					texto = ServidorAsimetrico.textarea.getText();
 					Thread.sleep(250);
 					if(texto.getBytes().length!=0) {
 						EnviarMensajes(texto);						
@@ -74,9 +74,9 @@ public class HiloServidorAsimetrico extends Thread
 	// El programa abre un stream de salida para escribir el texto en el socket
 	private void EnviarMensajes(String texto)
 	{
-		for(int i=0; i<ServidorChat.CONEXIONES; i++)
+		for(int i=0; i<ServidorAsimetrico.CONEXIONES; i++)
 		{
-			Socket socket = ServidorChat.tabla[i];
+			Socket socket = ServidorAsimetrico.tabla[i];
 			try
 			{
 				DataOutputStream fsalida = new
