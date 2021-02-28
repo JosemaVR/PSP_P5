@@ -1,4 +1,4 @@
-package juego;
+package claveAsimetrica;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.Random;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -22,15 +20,13 @@ public class ServidorChat extends JFrame implements ActionListener
 	static final int PUERTO = 44444;
 	static int CONEXIONES = 0;
 	static int ACTUALES = 0;
+	static int MAXIMO = 15;
 	static JTextField mensaje = new JTextField("");
 	static JTextField mensaje2 = new JTextField("");
 	private JScrollPane scrollpane1;
 	static JTextArea textarea;
 	JButton salir = new JButton("Salir");
-	static Socket[] tabla = new Socket[99];
-	static Integer numPremio;
-	static Random r = new Random();
-
+	static Socket[] tabla = new Socket[MAXIMO];
 	public ServidorChat()
 	{
 		// Construimos el entorno gráfico
@@ -69,10 +65,7 @@ public class ServidorChat extends JFrame implements ActionListener
 		// Se usa un bucle para controlar el número de conexiones.
 		// Dentro del bucle el servidor espera la conexión
 		// del cliente y cuando se conecta se crea un socket
-		numPremio = r.nextInt(100);
-		//System.out.println(numPremio);
-		
-		while(CONEXIONES < 100)
+		while(CONEXIONES < MAXIMO)
 		{
 			Socket socket;
 			try
@@ -119,6 +112,7 @@ public class ServidorChat extends JFrame implements ActionListener
 			System.out.println("Servidor finalizado...");
 		}
 	}
+	
 	public void actionPerformed(ActionEvent e)
 	{
 		if(e.getSource()==salir)

@@ -5,9 +5,16 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 public class HiloServidor extends Thread
 {
@@ -53,8 +60,7 @@ public class HiloServidor extends Thread
 				if(cadena.trim().equals("*"))
 				{
 					ServidorChat.ACTUALES--;
-					ServidorChat.mensaje.setText("Número de conexiones actuales: "
-							+ ServidorChat.ACTUALES);
+					ServidorChat.mensaje.setText("Número de conexiones actuales: " + ServidorChat.ACTUALES);
 					fin=true;
 				}
 				// El texto que el cliente escribe en el chat,
@@ -105,8 +111,7 @@ public class HiloServidor extends Thread
 			Cipher cipher = Cipher.getInstance("AES");
 			// Reiniciar Cipher al modo desencriptado
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, cipher.getParameters());
-			byte[] plainBytesDecrypted = cipher.doFinal(packet.getData(),
-					packet.getOffset(), packet.getLength());
+			byte[] plainBytesDecrypted = cipher.doFinal(packet.getData(), packet.getOffset(), packet.getLength());
 			res = new String(plainBytesDecrypted);
 		}
 		catch(Exception e)
@@ -114,5 +119,17 @@ public class HiloServidor extends Thread
 			e.printStackTrace();
 		}
 		return res;
+	}
+	
+	public DatagramPacket encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnknownHostException {
+		byte[] plainBytes = texto.getBytes();
+		byte[] keySymme = {0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b, 0x65, 0x79}; // ClaveSecreta
+		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
+		// Crear objeto Cipher e inicializar modo encriptación
+		Cipher cipher = Cipher.getInstance("AES"); // Transformación
+		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+		byte[] EncryptedData = cipher.doFinal(plainBytes);	
+		DatagramPacket packet = new DatagramPacket(EncryptedData, EncryptedData.length, InetAddress.getByAddress(new byte[] { 127,0,0,1 }), 44444);
+		return packet;
 	}
 }

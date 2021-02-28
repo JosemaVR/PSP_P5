@@ -1,4 +1,4 @@
-package juego;
+package claveAsimetrica;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -6,14 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -34,9 +27,7 @@ public class ClienteChat extends JFrame implements ActionListener
 	JButton boton = new JButton("Enviar");
 	JButton desconectar = new JButton("Salir");
 	boolean repetir = true;
-
-	public ClienteChat(Socket socket, String nombre) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException
-	{
+	public ClienteChat(Socket socket, String nombre) {
 		// Prepara la pantalla. Se recibe el socket creado y el nombre del cliente
 		super(" Conexión del cliente chat: " + nombre);
 		setLayout(null);
@@ -66,8 +57,8 @@ public class ClienteChat extends JFrame implements ActionListener
 		{
 			fentrada = new DataInputStream(socket.getInputStream());
 			fsalida = new DataOutputStream(socket.getOutputStream());
-			String texto = "SERVIDOR "+nombre+" entra en la partida.";
-			fsalida.writeUTF(encriptar(texto));
+			String texto = "SERVIDOR> Entra en el chat... " + nombre;
+			encriptar(fsalida, texto);
 		}
 		catch (IOException ex)
 		{
@@ -76,6 +67,7 @@ public class ClienteChat extends JFrame implements ActionListener
 			System.exit(0);
 		}
 	}
+
 	// El método main es el que lanza el cliente,
 	// para ello en primer lugar se solicita el nombre o nick del
 	// cliente, una vez especificado el nombre
@@ -85,17 +77,15 @@ public class ClienteChat extends JFrame implements ActionListener
 	{
 		int puerto = 44444;
 		String nombre = JOptionPane.showInputDialog("Introduce tu nombre o nick:");
-		nombre = nombre.toUpperCase();
 		Socket socket = null;
 		try
 		{
-			socket = new Socket("localhost", puerto);
+			socket = new Socket("127.0.0.1", puerto);
 		}
 		catch (IOException ex)
 		{
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" 
-					+ ex.getMessage(), "<<Mensaje de Error:1>>", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" + ex.getMessage(), "<<Mensaje de Error:1>>", JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
 		}
 		if(!nombre.trim().equals(""))
@@ -116,17 +106,9 @@ public class ClienteChat extends JFrame implements ActionListener
 	{
 		if(e.getSource()==boton)
 		{
-			String texto = nombre + " " + mensaje.getText();
-			try
-			{
-				fsalida.writeUTF(encriptar(texto));
-			}
-			catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex)
-			{
-				ex.printStackTrace();
-			}
+			String texto = nombre + "> " + mensaje.getText();
 			mensaje.setText("");
-			mensaje.setEditable(false);
+			encriptar(fsalida, texto);
 		}
 		// Si se pulsa el botón Salir,
 		// se envía un mensaje indicando que el cliente abandona el chat
@@ -134,18 +116,10 @@ public class ClienteChat extends JFrame implements ActionListener
 		// al servidor que el cliente se ha cerrado
 		else if(e.getSource()==desconectar)
 		{
-			String texto = "SERVIDOR "+nombre+" abandona la partida.";
-			try
-			{
-				mensaje.setEditable(false);
-				fsalida.writeUTF(encriptar(texto));
-				fsalida.writeUTF(encriptar("*"));
-				repetir = false;
-			}
-			catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex)
-			{
-				ex.printStackTrace();
-			}
+			String texto = "SERVIDOR> Abandona el chat... " + nombre;
+			encriptar(fsalida, texto);
+			encriptar(fsalida, "*");
+			repetir = false;
 		}
 	}
 	// Dentro del método ejecutar(), el cliente lee lo que el
@@ -156,41 +130,20 @@ public class ClienteChat extends JFrame implements ActionListener
 	public void ejecutar()
 	{
 		String texto = "";
-		try 
-		{
-			texto = fentrada.readUTF();
-			textarea.setText(texto);
-			mensaje.setEditable(true);
-			if(texto.contains("Y HA ACERTADOOOO")) {
-				mensaje.setEditable(false);
-			}
-		}
-		catch (IOException ex)
-		{
-			JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" 
-					+ ex.getMessage(), "<<Mensaje de Error:2>>", JOptionPane.ERROR_MESSAGE);
-			repetir = false;
-		}
 		while(repetir)
 		{
 			try 
 			{
-				texto = fentrada.readUTF();
-				textarea.setText(texto);
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				mensaje.setEditable(true);
-				if(texto.contains("Y HA ACERTADOOOO")) {
-					mensaje.setEditable(false);
+				String encriptado = fentrada.readUTF();
+				texto = desencriptar(encriptado);
+				textarea.append("\n" + texto);
+				if(textarea.getText().contains("\n\n")) {
+					textarea.setText(textarea.getText().replace("\n\n", ""));
 				}
 			}
 			catch (IOException ex)
 			{
-				JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" 
-						+ ex.getMessage(), "<<Mensaje de Error:2>>", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" + ex.getMessage(), "<<Mensaje de Error:2>>", JOptionPane.ERROR_MESSAGE);
 				repetir = false;
 			}
 		}
@@ -204,18 +157,39 @@ public class ClienteChat extends JFrame implements ActionListener
 			ex.printStackTrace();
 		}
 	}
-	
-	public String encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-		byte[] plainBytes = texto.getBytes();
-		byte[] keySymme = {
-				0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63,
-				0x72, 0x65, 0x74, 0x4b, 0x65, 0x79
-		};// ClaveSecreta
-		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
-		// Crear objeto Cipher e inicializar modo encriptación
-		Cipher cipher = Cipher.getInstance("AES"); // Transformación
-		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-		byte[] EncryptedData = cipher.doFinal(plainBytes);		
-		return new String(EncryptedData);
+
+	public String desencriptar(String texto) {
+		String desencriptado = "";
+		// Trabajamos con las claves privadas y públicas
+		try {
+			RSA rsaCliente = new RSA();
+			rsaCliente.genKeyPair(512);
+			rsaCliente.openFromDiskPrivateKey("rsaCliente.pri");
+			rsaCliente.openFromDiskPublicKey("rsaCliente.pub");
+			desencriptado = rsaCliente.Decrypt(texto);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return desencriptado;
+	}
+
+	private void encriptar(DataOutputStream fsalida, String mensaje) {
+		if(mensaje.getBytes().length>53) {
+			mensaje = "SERVIDOR> " + mensaje.split(">")[0] + " - MÁXIMO 53 CARÁCTERES";
+		}
+		try {
+			RSA rsa = new RSA();
+			rsa.genKeyPair(512);
+			rsa.saveToDiskPrivateKey("rsa.pri");
+			rsa.saveToDiskPublicKey("rsa.pub");
+			// Ciframos e imprimimos, el texto cifrado es devuelto en la variable secure
+			String secure = rsa.Encrypt(mensaje);
+			System.out.println("Mensaje encriptado Cliente: " + secure);
+			System.out.println("Mensaje desencriptado Cliente: " + mensaje);
+			fsalida.writeUTF(secure);
+		} catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
 	}
 }

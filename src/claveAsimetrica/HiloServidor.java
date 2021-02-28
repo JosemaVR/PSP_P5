@@ -1,0 +1,129 @@
+package claveAsimetrica;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+public class HiloServidor extends Thread
+{
+	DataInputStream fentrada;
+	Socket socket;
+	boolean fin = false;
+	public HiloServidor(Socket socket)
+	{
+		this.socket = socket;
+		try
+		{
+			fentrada = new DataInputStream(socket.getInputStream());
+		}
+		catch (IOException e)
+		{
+			System.out.println("Error de E/S");
+			e.printStackTrace();
+		}
+	}
+	// En el método run() lo primero que hacemos
+	// es enviar todos los mensajes actuales al cliente que se
+	// acaba de incorporar
+	public void run()
+	{
+		ServidorChat.mensaje.setText("Número de conexiones actuales: " +
+				ServidorChat.ACTUALES);
+		String texto = ServidorChat.textarea.getText();
+		EnviarMensajes(texto);
+		// Seguidamente, se crea un bucle en el que se recibe lo que el cliente escribe en el chat.
+		// Cuando un cliente finaliza con el botón Salir, se envía un * al servidor del Chat,
+		// entonces se sale del bucle while, ya que termina el proceso del cliente,
+		// de esta manera se controlan las conexiones actuales
+		while(!fin)
+		{
+			String cadena = "";
+			try
+			{
+				String encriptado = fentrada.readUTF();
+				cadena = desencriptar(encriptado);
+				if(cadena.trim().equals("*"))
+				{
+					ServidorChat.ACTUALES--;
+					ServidorChat.mensaje.setText("Número de conexiones actuales: "
+							+ ServidorChat.ACTUALES);
+					fin=true;
+				}
+				// El texto que el cliente escribe en el chat,
+				// se añade al textarea del servidor y se reenvía a todos los clientes
+				else
+				{
+					ServidorChat.textarea.append(cadena + "\n");
+					texto = ServidorChat.textarea.getText();
+					Thread.sleep(250);
+					if(texto.getBytes().length!=0) {
+						EnviarMensajes(texto);						
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				ex.printStackTrace();
+				fin=true;
+			}
+		}
+	}
+	// El método EnviarMensajes() envía el texto del textarea a
+	// todos los sockets que están en la tabla de sockets,
+	// de esta forma todos ven la conversación.
+	// El programa abre un stream de salida para escribir el texto en el socket
+	private void EnviarMensajes(String texto)
+	{
+		for(int i=0; i<ServidorChat.CONEXIONES; i++)
+		{
+			Socket socket = ServidorChat.tabla[i];
+			try
+			{
+				DataOutputStream fsalida = new
+						DataOutputStream(socket.getOutputStream());
+				encriptar(fsalida, texto);
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public String desencriptar(String texto) {
+		String desencriptado = "";
+		// Trabajamos con las claves privadas y públicas
+		try {
+			RSA rsaCliente = new RSA();
+			rsaCliente.genKeyPair(512);
+			rsaCliente.openFromDiskPrivateKey("rsa.pri");
+			rsaCliente.openFromDiskPublicKey("rsa.pub");
+			desencriptado = rsaCliente.Decrypt(texto);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return desencriptado;
+	}
+
+	private void encriptar(DataOutputStream fsalida, String mensaje) {
+		if(mensaje.contains("\n")) {
+			int i = mensaje.split("\n").length - 1;
+			mensaje = mensaje.split("\n")[i];
+		}
+		try {
+			RSA rsa = new RSA();
+			rsa.genKeyPair(512);
+			rsa.saveToDiskPrivateKey("rsaCliente.pri");
+			rsa.saveToDiskPublicKey("rsaCliente.pub");
+			// Ciframos e imprimimos, el texto cifrado es devuelto en la variable secure
+			String secure = rsa.Encrypt(mensaje);
+			System.out.println("Mensaje encriptado Cliente: " + secure);
+			System.out.println("Mensaje desencriptado Cliente: " + mensaje);
+			fsalida.writeUTF(secure);
+		} catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
+	}
+}
