@@ -167,6 +167,9 @@ public class ClienteChat extends JFrame implements ActionListener
 			rsaCliente.openFromDiskPrivateKey("rsaCliente.pri");
 			rsaCliente.openFromDiskPublicKey("rsaCliente.pub");
 			desencriptado = rsaCliente.Decrypt(texto);
+			System.out.println("DESENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + texto);
+			System.out.println("Mensaje sin encriptar: " + desencriptado);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -184,8 +187,9 @@ public class ClienteChat extends JFrame implements ActionListener
 			rsa.saveToDiskPublicKey("rsa.pub");
 			// Ciframos e imprimimos, el texto cifrado es devuelto en la variable secure
 			String secure = rsa.Encrypt(mensaje);
-			System.out.println("Mensaje encriptado Cliente: " + secure);
-			System.out.println("Mensaje desencriptado Cliente: " + mensaje);
+			System.out.println("ENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + secure);
+			System.out.println("Mensaje sin encriptar: " + mensaje);
 			fsalida.writeUTF(secure);
 		} catch (Exception e)
 		{

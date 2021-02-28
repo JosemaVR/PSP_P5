@@ -1,11 +1,9 @@
 package claveSimetrica;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
@@ -18,7 +16,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 public class HiloServidor extends Thread
 {
-	DatagramSocket fentrada;
+	DataInputStream fentrada;
 	Socket socket;
 	boolean fin = false;
 	public HiloServidor(Socket socket)
@@ -26,7 +24,7 @@ public class HiloServidor extends Thread
 		this.socket = socket;
 		try
 		{
-			fentrada = new DatagramSocket(socket.getLocalPort());
+			fentrada = new DataInputStream(socket.getInputStream());
 		}
 		catch (IOException e)
 		{
@@ -52,15 +50,13 @@ public class HiloServidor extends Thread
 			try
 			{
 				byte[] data = new byte[1024];
-				DatagramPacket packet = new DatagramPacket(data, data.length);
-				fentrada.receive(packet);
-				String cadena = desencriptar(packet);
-				String txtCadena = new String(packet.getData());
-				ServidorChat.textarea.append("ENCRIPTADO> " + txtCadena.replace("\n", "").trim() + "\n");
+				fentrada.read(data);
+				String cadena = desencriptar(data);
 				if(cadena.trim().equals("*"))
 				{
 					ServidorChat.ACTUALES--;
-					ServidorChat.mensaje.setText("Número de conexiones actuales: " + ServidorChat.ACTUALES);
+					ServidorChat.mensaje.setText("Número de conexiones actuales: "
+							+ ServidorChat.ACTUALES);
 					fin=true;
 				}
 				// El texto que el cliente escribe en el chat,
@@ -92,9 +88,9 @@ public class HiloServidor extends Thread
 			{
 				DataOutputStream fsalida = new
 						DataOutputStream(socket.getOutputStream());
-				fsalida.writeUTF(texto);
+				fsalida.write(encriptar(texto));
 			}
-			catch (IOException e)
+			catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e)
 			{
 				e.printStackTrace();
 			}
@@ -102,17 +98,21 @@ public class HiloServidor extends Thread
 	}
 
 
-	private String desencriptar(DatagramPacket packet) throws UnsupportedEncodingException {
+	private String desencriptar(byte[] EncryptedData) throws UnsupportedEncodingException {
 		String res = "";
 		byte[] keySymme = {0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b, 0x65, 0x79}; // ClaveSecreta
 		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
 		try
 		{
-			Cipher cipher = Cipher.getInstance("AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 			// Reiniciar Cipher al modo desencriptado
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, cipher.getParameters());
-			byte[] plainBytesDecrypted = cipher.doFinal(packet.getData(), packet.getOffset(), packet.getLength());
-			res = new String(plainBytesDecrypted);
+			res = new String(cipher.update(EncryptedData));
+			res = res.replaceAll("[^a-zA-Z0-9ñÑ <>.;:,¿?¡!ºª#$€()/&%*-+]", ""); 
+			res = res.replaceAll("QGj", "");
+			System.out.println("DESENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + (new String(EncryptedData)).replaceAll("\n", ""));
+			System.out.println("Mensaje sin encriptar: " + res);
 		}
 		catch(Exception e)
 		{
@@ -121,7 +121,11 @@ public class HiloServidor extends Thread
 		return res;
 	}
 	
-	public DatagramPacket encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnknownHostException {
+	public byte[] encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnknownHostException {
+		if(texto.contains("\n")) {
+			int j = texto.split("\n").length - 1;
+			texto = texto.split("\n")[j];
+		}
 		byte[] plainBytes = texto.getBytes();
 		byte[] keySymme = {0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b, 0x65, 0x79}; // ClaveSecreta
 		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
@@ -129,7 +133,9 @@ public class HiloServidor extends Thread
 		Cipher cipher = Cipher.getInstance("AES"); // Transformación
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		byte[] EncryptedData = cipher.doFinal(plainBytes);	
-		DatagramPacket packet = new DatagramPacket(EncryptedData, EncryptedData.length, InetAddress.getByAddress(new byte[] { 127,0,0,1 }), 44444);
-		return packet;
+		System.out.println("ENCRIPTANDO");
+		System.out.println("Mensaje encriptado: " + new String(EncryptedData));
+		System.out.println("Mensaje sin encriptar: " + texto);
+		return EncryptedData;
 	}
 }

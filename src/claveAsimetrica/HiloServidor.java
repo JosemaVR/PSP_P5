@@ -99,6 +99,9 @@ public class HiloServidor extends Thread
 			rsaCliente.openFromDiskPrivateKey("rsa.pri");
 			rsaCliente.openFromDiskPublicKey("rsa.pub");
 			desencriptado = rsaCliente.Decrypt(texto);
+			System.out.println("DESENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + texto);
+			System.out.println("Mensaje sin encriptar: " + desencriptado);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -118,8 +121,9 @@ public class HiloServidor extends Thread
 			rsa.saveToDiskPublicKey("rsaCliente.pub");
 			// Ciframos e imprimimos, el texto cifrado es devuelto en la variable secure
 			String secure = rsa.Encrypt(mensaje);
-			System.out.println("Mensaje encriptado Cliente: " + secure);
-			System.out.println("Mensaje desencriptado Cliente: " + mensaje);
+			System.out.println("ENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + secure);
+			System.out.println("Mensaje sin encriptar: " + mensaje);
 			fsalida.writeUTF(secure);
 		} catch (Exception e)
 		{

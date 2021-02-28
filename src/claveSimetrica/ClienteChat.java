@@ -3,10 +3,9 @@ package claveSimetrica;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
@@ -28,7 +27,7 @@ public class ClienteChat extends JFrame implements ActionListener
 	private static final long serialVersionUID = 1L;
 	Socket socket;
 	DataInputStream fentrada;
-	DatagramSocket fsalida;
+	DataOutputStream fsalida;
 	String nombre;
 	static JTextField mensaje = new JTextField();
 	private JScrollPane scrollpane;
@@ -66,9 +65,9 @@ public class ClienteChat extends JFrame implements ActionListener
 		try
 		{
 			fentrada = new DataInputStream(socket.getInputStream());
-			fsalida = new DatagramSocket();
+			fsalida = new DataOutputStream(socket.getOutputStream());
 			String texto = "SERVIDOR> Entra en el chat... " + nombre;
-			fsalida.send(encriptar(texto));
+			fsalida.write(encriptar(texto));
 		}
 		catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex)
 		{
@@ -119,7 +118,7 @@ public class ClienteChat extends JFrame implements ActionListener
 			try
 			{
 				mensaje.setText("");
-				fsalida.send(encriptar(texto));
+				fsalida.write(encriptar(texto));
 			}
 			catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex)
 			{
@@ -135,8 +134,8 @@ public class ClienteChat extends JFrame implements ActionListener
 			String texto = "SERVIDOR> Abandona el chat... " + nombre;
 			try
 			{
-				fsalida.send(encriptar(texto));
-				fsalida.send(encriptar("*"));
+				fsalida.write(encriptar(texto));
+				fsalida.write(encriptar("*"));
 				repetir = false;
 			}
 			catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException ex)
@@ -157,12 +156,13 @@ public class ClienteChat extends JFrame implements ActionListener
 		{
 			try 
 			{
-				texto = fentrada.readUTF();
-				textarea.setText(texto);
+				byte[] data = new byte[1024];
+				fentrada.read(data);
+				texto = desencriptar(data);
+				textarea.append(texto + "\n");
 			}
 			catch (IOException ex)
 			{
-				JOptionPane.showMessageDialog(null, "Imposible conectar con el servidor \n" + ex.getMessage(), "<<Mensaje de Error:2>>", JOptionPane.ERROR_MESSAGE);
 				repetir = false;
 			}
 		}
@@ -177,7 +177,30 @@ public class ClienteChat extends JFrame implements ActionListener
 		}
 	}
 
-	public DatagramPacket encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnknownHostException {
+	private String desencriptar(byte[] EncryptedData) throws UnsupportedEncodingException {
+		String res = "";
+		byte[] keySymme = {0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b, 0x65, 0x79}; // ClaveSecreta
+		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
+		try
+		{
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			// Reiniciar Cipher al modo desencriptado
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, cipher.getParameters());
+			res = new String(cipher.update(EncryptedData));
+			res = res.replaceAll("[^a-zA-Z0-9ñÑ <>.;:,¿?¡!ºª#$€()/&%*-+]", ""); 
+			res = res.replaceAll("QGj", "");
+			System.out.println("DESENCRIPTANDO");
+			System.out.println("Mensaje encriptado: " + (new String(EncryptedData)).replaceAll("\n", ""));
+			System.out.println("Mensaje sin encriptar: " + res);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return res;
+	}
+	
+	public byte[] encriptar(String texto) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnknownHostException {
 		byte[] plainBytes = texto.getBytes();
 		byte[] keySymme = {0x74, 0x68, 0x69, 0x73, 0x49, 0x73, 0x41, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4b, 0x65, 0x79}; // ClaveSecreta
 		SecretKeySpec secretKey = new SecretKeySpec(keySymme, "AES");
@@ -185,7 +208,9 @@ public class ClienteChat extends JFrame implements ActionListener
 		Cipher cipher = Cipher.getInstance("AES"); // Transformación
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		byte[] EncryptedData = cipher.doFinal(plainBytes);	
-		DatagramPacket packet = new DatagramPacket(EncryptedData, EncryptedData.length, InetAddress.getByAddress(new byte[] { 127,0,0,1 }), 44444);
-		return packet;
+		System.out.println("ENCRIPTANDO");
+		System.out.println("Mensaje encriptado: " + new String(EncryptedData));
+		System.out.println("Mensaje sin encriptar: " + texto);
+		return EncryptedData;
 	}
 }
